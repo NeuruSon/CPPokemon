@@ -58,11 +58,6 @@ void changePkm_cham(Trainer &c, Pokemon &cp, int n) {
     cp = c.getPkm(changeNum-1);
 }
 
-//행동 결정 함수
-void chooseAction(Pokemon& fa, Pokemon& la) {
-
-}
-
 //행동
 void action(Trainer &t, Pokemon &a, Pokemon &na, int n) {
     if (n < 5 && n > 0) {
@@ -139,63 +134,49 @@ void battle(Trainer &t, Trainer &c) {
         }
 
         //선제판단 및 액션
-        {
-            //선제 판단 - 우선도
-            Pokemon fa; Pokemon la;
-            
-            //챔피언 행동 알고리즘 
-            int cTodoNum = 0;
-            if (cp.getHp() / cp.getFHp() < 0.3) { //체력이 어느정도 떨어지면 포켓몬당 1회 회복
-                
-            }
-            else { //체력 충분할 때는 공격만 
-                random_device rd;
-                mt19937 gen(rd());
-                uniform_int_distribution<int> randomNum(1, 4);
-                cTodoNum = randomNum(rd);
-            }
+        bool isPFirst = false;
 
-            //플레이어 우선도 
-            if (todoNum < 5 && todoNum > 0) {
-                pPr += p.getSkill(todoNum-1).getPr();
-            }
-            else if (todoNum == 5 || todoNum == 6) {
-                pPr += 6;
-            }
-            else {}
-            cout << pPr;
+        //챔피언 행동 알고리즘 
+        int cTodoNum = 0;
+        if (cp.getHp() / cp.getFHp() < 0.3) { //체력이 어느정도 떨어지면 포켓몬당 1회 회복
 
-            //챔피언 우선도 
-            if (cTodoNum < 5 && cTodoNum > 0) {
-                cpPr += cp.getSkill(cTodoNum-1).getPr();
-            }
-            else if (cTodoNum == 5 || cTodoNum == 6) {
-                cpPr += 6;
-            }
-            else {}
-            cout << cpPr << endl;
-
-            //우선도 비교
-            if (pPr == cpPr) { //같으면 
-                if (p.getSpd() > cp.getSpd()) { fa = p; la = cp; } //스피드 비교 
-                else { fa = cp; la = p; } //플레이어의 스피드가 느리거나 둘이 같다면 챔피언 선제
-            }
-            else if (pPr > cpPr) { fa = p; la = cp; } //플레이어가 우선이라면 
-            else { fa = cp; la = p; } //챔피언이 우선이라면 
-
-            //턴 전반
-            cout << &fa << " " << &p << " " << &la << " " << &cp << endl;
-
-            if (fa.isActive() == true && &fa == &p) { action(t, fa, la, todoNum); }
-            else if (fa.isActive() == true && &fa == &cp) { action(c, fa, la, cTodoNum); }
-            p.coloredName(); cout << " " << p.getHp() << " / " << p.getFHp() << "\t\t"; cp.coloredName(); cout << endl;
-            if (knockdown(p, cp) == true) { break; }
-            //턴 후반
-            if (la.isActive() == true && &la == &p) { action(t, la, fa, todoNum); }
-            else if (la.isActive() == true && &la == &cp) { action(c, la, fa, cTodoNum); }
-            p.coloredName(); cout << " " << p.getHp() << " / " << p.getFHp() << "\t\t"; cp.coloredName(); cout << endl;
-            if (knockdown(p, cp) == true) { break; }
         }
+        else { //체력 충분할 때는 공격만 
+            random_device rd;
+            mt19937 gen(rd());
+            uniform_int_distribution<int> randomNum(1, 4);
+            cTodoNum = randomNum(rd);
+        }
+
+        //플레이어 우선도 
+        if (todoNum < 5 && todoNum > 0) { pPr += p.getSkill(todoNum - 1).getPr(); }
+        else if (todoNum == 5 || todoNum == 6) { pPr += 6; }
+        else {}
+
+        //챔피언 우선도 
+        if (cTodoNum < 5 && cTodoNum > 0) { cpPr += cp.getSkill(cTodoNum - 1).getPr(); }
+        else if (cTodoNum == 5 || cTodoNum == 6) { cpPr += 6; }
+        else {}
+
+        //우선도 비교
+        if (pPr == cpPr) { //같으면 
+            if (p.getSpd() > cp.getSpd()) { isPFirst = true; } //스피드 비교 
+            else { isPFirst = false; } //플레이어의 스피드가 느리거나 둘이 같다면 챔피언 선제
+        }
+        else if (pPr > cpPr) { isPFirst = true; } //플레이어가 우선이라면 
+        else { isPFirst = false; } //챔피언이 우선이라면 
+
+        //턴 전반
+        if (isPFirst == true && p.isActive() == true) { action(t, p, cp, todoNum); } //플레이어 선공
+        else if (isPFirst == false && cp.isActive() == true) { action(c, cp, p, cTodoNum); } //챔피언 선공
+        p.coloredName(); cout << " " << p.getHp() << " / " << p.getFHp() << "\t\t"; cp.coloredName(); cout << endl;
+        if (knockdown(p, cp) == true) { break; }
+
+        //턴 후반
+        if (isPFirst == false && p.isActive() == true) { action(t, p, cp, todoNum); } //플레이어 후공
+        else if (isPFirst == true && cp.isActive() == true) { action(c, cp, p, cTodoNum); } //챔피언 후공
+        p.coloredName(); cout << " " << p.getHp() << " / " << p.getFHp() << "\t\t"; cp.coloredName(); cout << endl;
+        if (knockdown(p, cp) == true) { break; }
     }
 
     //승패
