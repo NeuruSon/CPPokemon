@@ -31,4 +31,11 @@ public:
 	void setPkm(Pokemon pkm, int n) { pokemon[n] = pkm; }
 
 	void changeMny(int mny) { money += mny; }
+	int getAlivePkmCount() {
+		int count = 6;
+		for (int i = 0; i < 6; ++i) {
+			if (pokemon[i].isActive() == false) { --count; }
+		}
+		return count;
+	}
 };

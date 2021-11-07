@@ -60,6 +60,7 @@ void Pokemon::setActive() {
 }
 void Pokemon::setDeactive() {
     active = false;
+    cout << name << "은(는) 쓰러졌다!" << endl;
 }
 
 string Pokemon::getName() {
@@ -96,7 +97,7 @@ bool Pokemon::isActive() {
 
 void Pokemon::addExp(int exp) {
     experience += exp;
-    cout << name << "는 " << exp << "의 경험치를 획득했다!" << endl;
+    cout << name << "은(는) " << exp << "의 경험치를 획득했다!" << endl;
 }
 void Pokemon::addFHp(int fhp) {
     f_hitPoint += fhp;
@@ -129,45 +130,53 @@ void Pokemon::damaged(int d) {
     }
     else { hitPoint -= d; }
     cout << name << "은(는) " << d << "의 대미지를 입었다!" << endl;
+
+    if (hitPoint <= 0) {
+        setDeactive();
+    }
 }
 
 void Pokemon::printInfo() {
     cout  << "이  름: " << name << endl << "경험치: " << experience << endl << "체  력: " << hitPoint << " / " << f_hitPoint << endl << "공  격: " << attackPoint << endl << "방  어: " << defencePoint << endl << "마스터: " << master << endl << endl;
 }
 void Pokemon::coloredName() {
-    // cout << "\x1b[42m" << " " << "\x1b[102m" << " " << "\x1b[103m" << " " << "\x1b[43m" << " " << "\x1b[101m" << " " << "\x1b[41m" << " " << "\x1b[0m";
     if (hitPoint > f_hitPoint * 0.9) {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2);
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //Green
         cout << name;
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
     }
-    else if (hitPoint > f_hitPoint * 0.7) {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+    else if (hitPoint > f_hitPoint * 0.5) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10); //Light Green
         cout << name;
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
     }
-    else if (hitPoint > f_hitPoint * 0.55) {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14);
+    else if (hitPoint > f_hitPoint * 0.35) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14); //Light Yellow
         cout << name;
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
     }
-    else if (hitPoint > f_hitPoint * 0.3) {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14);
+    else if (hitPoint > f_hitPoint * 0.25) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //Yellow
         cout << name;
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
     }
-    else if (hitPoint > f_hitPoint * 0.1) {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6);
+    else if (hitPoint > f_hitPoint * 0.15) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12); //Light Red
         cout << name;
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
     }
     else if (hitPoint > 0) {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4); //Red
+        cout << name;
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+    }
+    else if (hitPoint <= 0) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8); //Gray
         cout << name;
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
     }
     else {
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8); //Gray
         cout << name;
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
     }

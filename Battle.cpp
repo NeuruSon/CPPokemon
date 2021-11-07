@@ -10,22 +10,40 @@
 #pragma comment(lib, "Winmm.lib")
 using namespace std;
 
-bool knockdown(Pokemon* p1, Pokemon* p2) {
-    Sleep(1000);
-    if (p1->getHp() <= 0) {
-        cout << endl << p1->getName() << "가 쓰러졌다!" << endl;
-        if (p2->getHp() <= 0) {
-            Sleep(1000);
-            cout << endl << "상대 " << p2->getName() << "가 쓰러졌다!" << endl;
-        }
-        return true;
-    }
-    if (p2->getHp() <= 0) {
-        cout << endl << "상대 " << p2->getName() << "가 쓰러졌다!" << endl;
-        return true;
-    }
-    return false;
-}
+enum State {
+    //얼마나 세분화? 
+    //진행, 수 고민중, 끝?
+    STATE_BATTLE,
+    STATE_BATTLE_END
+};
+
+enum TrainerType {
+   TRAINERTYPE_PLAYER, //플레이어 
+   TRAINERTYPE_CHAMPION, //챔피언
+   TRAINERTYPE_VILLAIN, //빌런
+   TRAINERTYPE_VILLAINMASTER, //빌런 우두머리
+   TRAINERTYPE_TRAINER, //일반 포켓몬 트레이너
+   TRAINERTYPE_NONTRAINER //야생 포켓몬
+};
+
+enum PokemonType {
+    POKEMONTYPE_NORMAL, //노말
+    POKEMONTYPE_FIRE, //불꽃
+    POKEMONTYPE_WATER, //물
+    POKEMONTYPE_GRASS, //풀
+    POKEMONTYPE_ELECTRIC, //전기
+    POKEMONTYPE_ICE, //얼음
+    POKEMONTYPE_FIGHTING, //격투
+    POKEMONTYPE_POISON, //독
+    POKEMONTYPE_FLYING, //비행 
+    POKEMONTYPE_PSYCHIC, //에스퍼
+    POKEMONTYPE_BUG, //벌레
+    POKEMONTYPE_ROCK, //바위
+    POKEMONTYPE_GHOST, //고스트
+    POKEMONTYPE_DRAGON, //드래곤
+    POKEMONTYPE_DARK, //악
+    POKEMONTYPE_STEEL //강철
+};
 
 //수정한 대미지 = (((레벨*2/5)+2)*위력*공격/50)/방어*랜덤수/100
 int damage(Pokemon* a, Pokemon* na, int p) { 
@@ -37,7 +55,8 @@ int damage(Pokemon* a, Pokemon* na, int p) {
 
 //포켓몬 교체
 Pokemon* changePkm(Trainer &t, Pokemon* p) {
-    int changeNum = 0;
+    int changeNum = -1;
+    while (changeNum == -1) {
         cout << endl << "누구를 내보낼까?" << endl;
         cout << "  [1] "; t.getPkm(0)->coloredName();
         cout << "  [2] "; t.getPkm(1)->coloredName();
@@ -46,16 +65,54 @@ Pokemon* changePkm(Trainer &t, Pokemon* p) {
         cout << "  [5] "; t.getPkm(4)->coloredName();
         cout << "  [6] "; t.getPkm(5)->coloredName();
         cout << endl << "  >>> ";
-    cin >> changeNum;
-    cout << p->getName() << " 돌아와!" << endl;
+        cin >> changeNum;
+
+        if (changeNum > 6 || changeNum < 1) {
+            cout << endl << "오박사: " << t.getName() << ", " << changeNum << "은(는) 잘못된 수같다!" << endl; 
+            Sleep(1000);
+            cout << "데리고 있는 포켓몬 중에서 내보내렴." << endl;
+            Sleep(1000);
+            changeNum = -1;
+            continue;
+        }
+        else if (t.getPkm(changeNum-1)->isActive() == false) {
+            cout << t.getPkm(changeNum-1)->getName() << "은(는) 움직일 수 없다!" << endl;
+            Sleep(1000);
+            changeNum = -1;
+            continue;
+        }
+    }
+
+    cout << endl << p->getName() << " 돌아와!" << endl;
+    Sleep(1500);
     cout << "가랏! " << t.getPkm(changeNum-1)->getName() << "!" << endl;
+    Sleep(1000);
     return t.getPkm(changeNum-1);
 }
 
 Pokemon* changePkm_cham(Trainer &c, Pokemon* cp, int n) {
     int changeNum = n;
-    cout << c.getName() << "은(는) " << c.getPkm(changeNum-1)->getName() << "을(를) 내보냈다!" << endl;
+    Sleep(1500);
+    cout << endl << c.getName() << "은(는) " << c.getPkm(changeNum-1)->getName() << "을(를) 내보냈다!" << endl;
+    Sleep(1000);
     return c.getPkm(changeNum-1);
+}
+
+void knockdown(Pokemon* p1, Pokemon* p2, Trainer& t, Trainer& c) {
+    Sleep(1000);
+    if (t.getAlivePkmCount() > 0 && c.getAlivePkmCount() > 0) {
+        if (p1->isActive() == false) {
+            Sleep(1000);
+            p1 = changePkm(t, p1);
+        }
+        if (p2->isActive() == false) {
+            Sleep(1000);
+            p2 = changePkm_cham(c, p2, 5);
+        }
+    }
+    else {
+        return;
+    }
 }
 
 //행동
@@ -138,7 +195,8 @@ void battle(Trainer &t, Trainer &c) {
 
         //챔피언 행동 알고리즘 
         int cTodoNum = 0;
-        if (cp->getHp() / cp->getFHp() < 0.3) { //체력이 어느정도 떨어지면 포켓몬당 1회 회복 or 교체
+        float cpHP_f = cp->getHp();
+        if (cpHP_f / cp->getFHp() < 0.15) { //체력이 어느정도 떨어지면 포켓몬당 1회 회복 or 교체
             cTodoNum = 5;
             //수정 필요!!
         }
@@ -182,9 +240,7 @@ void battle(Trainer &t, Trainer &c) {
         p->coloredName(); cout << " " << p->getHp() << " / " << p->getFHp() << "\t\t"; cp->coloredName(); cout << endl;
 
         //쓰러졌다면 교체
-        if (knockdown(p, cp) == true) { 
-            break; 
-        }
+        knockdown(p, cp, t, c);
 
         //턴 후반
         if (isPFirst == false && p->isActive() == true) { //플레이어 후공
@@ -201,13 +257,11 @@ void battle(Trainer &t, Trainer &c) {
         p->coloredName(); cout << " " << p->getHp() << " / " << p->getFHp() << "\t\t"; cp->coloredName(); cout << endl;
 
         //쓰러졌다면 교체 
-        if (knockdown(p, cp) == true) { 
-            break; 
-        }
+        knockdown(p, cp, t, c);
     }
 
     //승패
-    if (p->getHp() > 0 && cp->getHp() <= 0) { //승리 
+    if (t.getAlivePkmCount() > 0 && c.getAlivePkmCount() <= 0) { //승리 
         PlaySound(TEXT("2_68.wav"), NULL, SND_FILENAME | SND_LOOP | SND_ASYNC);
         cout << c.getName() << "과의 승부에서 이겼다!" << endl << endl; Sleep(2000);
         cout << "… 조금 전까지 너는 최강의 도전자였다" << endl; Sleep(2000);
@@ -218,7 +272,7 @@ void battle(Trainer &t, Trainer &c) {
         cout << endl << endl << endl << "----------------------------------------------------------" << endl << "끝까지 난천을 이겨보질 못해서 만들어봤습니다 감사합니다" << endl << endl << endl;
         system("pause");
     }
-    else if (p->getHp() <= 0 && cp->getHp() > 0) { //패배 
+    else if (t.getAlivePkmCount() > 0 && c.getAlivePkmCount() <= 0) { //패배 
         cout << t.getName() << "에게는 싸울 수 있는 포켓몬이 없다!" << endl; Sleep(1000);
         int money = t.getMny();
         if (money >= 6250) { money = 6250; } //소지금이 지불금 이상이면 money를 지불금으로 변화
@@ -227,7 +281,7 @@ void battle(Trainer &t, Trainer &c) {
         cout << "… … … …" << endl; Sleep(1000);
         cout << t.getName() << "은(는) 눈앞이 캄캄해졌다!" << endl << endl; Sleep(1000);
     }
-    else {}
+    else { cout << "몬가... 몬가 잘못댓슴......" << endl; }
 }
 
 void loadSkills(Skill s[38]) {
@@ -278,6 +332,12 @@ void loadPokemon(Pokemon p[6], string code, Skill s[]) {
     }
 }
 
+string& trim(string& s, const char* t = " ") {
+    s = s.erase(0, s.find_first_not_of(t));
+    s = s.erase(s.find_last_not_of(t) + 1);
+    return s;
+}
+
 int main() {
     Skill skills[38];
     loadSkills(skills);
@@ -289,19 +349,20 @@ int main() {
     {
         PlaySound(TEXT("2_66.wav"), NULL, SND_FILENAME | SND_LOOP | SND_ASYNC);
         cout << "[플레이 방법]" << endl << " []안의 숫자를 입력 후 엔터를 누르면 진행됩니다" << endl << "----------------------------------------------------------" << endl << endl;
-        //Sleep(1000);
+        Sleep(1000);
 
-        //cout << "난천: 잘 있었어?" << endl; Sleep(1000);
-        //cout << "맞다 천관산에서 있었던 일은 고맙게 생각하고 있어" << endl; Sleep(1000);
-        //cout << "어떤 어려움에 부딪혀도 포켓몬과 함께 이겨냈구나" << endl; Sleep(1000);
-        //cout << "그것은 언제나 자기 자신을 이겨왔다는 것" << endl; Sleep(1000);
-        //cout << "그렇게 해서 강해졌다는 걸 너희들에게서 느낄 수 있어!" << endl; Sleep(1000);
-        //cout << "자 그럼! 여기에 온 목적은 알고 있어!" << endl; Sleep(1000);
-        //cout << "용맹한 트레이너, 네 이름을 여기 적어줘." << endl; Sleep(1000);
+        cout << "난천: 잘 있었어?" << endl; Sleep(1000);
+        cout << "맞다 천관산에서 있었던 일은 고맙게 생각하고 있어" << endl; Sleep(1000);
+        cout << "어떤 어려움에 부딪혀도 포켓몬과 함께 이겨냈구나" << endl; Sleep(1000);
+        cout << "그것은 언제나 자기 자신을 이겨왔다는 것" << endl; Sleep(1000);
+        cout << "그렇게 해서 강해졌다는 걸 너희들에게서 느낄 수 있어!" << endl; Sleep(1000);
+        cout << "자 그럼! 여기에 온 목적은 알고 있어!" << endl; Sleep(1000);
+        cout << "용맹한 트레이너, 네 이름을 여기 적어줘." << endl; Sleep(1000);
     }
     cout << endl << "당신의 이름은?" << endl << "  >>> ";
     getline(cin, playerName);
     {
+        playerName = trim(playerName);
         Sleep(1000);
         cout << endl << "좋아, 준비는 끝났네." << endl; Sleep(1000);
         cout << playerName << ", 포켓몬리그 챔피언으로서 너와 시합하겠어!" << endl << endl; Sleep(2000);
