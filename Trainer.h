@@ -23,7 +23,8 @@ public:
 
 	string getName() { return name; }
 	int getMny() { return money; }
-	Pokemon getPkm(int n) { return pokemon[n]; }
+	//Pokemon getPkm(int n) { return pokemon[n]; }
+	Pokemon* getPkm(int n) { return &pokemon[n]; }
 	
 	void setName(string nm) { name = nm; }
 	void setMny(int mny) { money = mny; }
