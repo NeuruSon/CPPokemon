@@ -4,20 +4,31 @@
 #include "Pokemon.h"
 using namespace std;
 
+namespace TrainerType {
+	enum type {
+		PLAYER = 3, //플레이어 
+		CHAMPION, //챔피언
+		TRAINER, //상대 트레이너
+		NONTRAINER //야생 포켓몬
+	};
+}
+
 class Trainer {
 	string name = "";
 	int money = 0; //소지금 
 	Pokemon pokemon[6] = {}; //빈칸 처리 잘하기 
+	TrainerType::type trainerType;
 
 public: 
 	Trainer() {};
-	Trainer(string nm, int mny, Pokemon pkm[6]) : name(nm), money(mny) {
+	Trainer(string nm, int mny, Pokemon pkm[6], TrainerType::type typ) : name(nm), money(mny) {
 		pokemon[0] = pkm[0];
 		pokemon[1] = pkm[1];
 		pokemon[2] = pkm[2];
 		pokemon[3] = pkm[3];
 		pokemon[4] = pkm[4];
 		pokemon[5] = pkm[5];
+		trainerType = typ;
 	};
 	~Trainer() {};
 

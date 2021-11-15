@@ -7,23 +7,13 @@
 using namespace std;
 
 Pokemon::Pokemon() : name("이름"), experience(0), f_hitPoint(0), hitPoint(0), attackPoint(0), defencePoint(0), master("없음") {}
-Pokemon::Pokemon(string nm, int exp, int fhp, int atk, int def, int spd, string type[2], Skill* skill[4], string mst) :
-    name(nm), experience(exp), f_hitPoint(fhp), hitPoint(fhp), attackPoint(atk), defencePoint(def), speed(spd), master(mst) {
+Pokemon::Pokemon(string nm, int exp, int fhp, int atk, int def, int spd, PokemonType::type t1, PokemonType::type t2, Skill* skill[4], string mst) :
+    name(nm), experience(exp), f_hitPoint(fhp), hitPoint(fhp), attackPoint(atk), defencePoint(def), speed(spd), type1(t1), type2(t2), master(mst) {
     active = true;
 }
-Pokemon::Pokemon(string nm, int exp, int fhp, int atk, int def, int spd, string type[2], Skill s1, Skill s2, Skill s3, Skill s4, string mst) :
-    name(nm), experience(exp), f_hitPoint(fhp), hitPoint(fhp), attackPoint(atk), defencePoint(def), speed(spd), master(mst) {
+Pokemon::Pokemon(string nm, int exp, int fhp, int atk, int def, int spd, PokemonType::type t1, PokemonType::type t2, Skill s1, Skill s2, Skill s3, Skill s4, string mst) :
+    name(nm), experience(exp), f_hitPoint(fhp), hitPoint(fhp), attackPoint(atk), defencePoint(def), speed(spd), type1(t1), type2(t2), master(mst) {
     active = true;
-    skill[0] = s1;
-    skill[1] = s2;
-    skill[2] = s3;
-    skill[3] = s4;
-}
-Pokemon::Pokemon(string nm, int exp, int fhp, int atk, int def, int spd, string type1, string type2, Skill s1, Skill s2, Skill s3, Skill s4, string mst) :
-    name(nm), experience(exp), f_hitPoint(fhp), hitPoint(fhp), attackPoint(atk), defencePoint(def), speed(spd), master(mst) {
-    active = true;
-    type[0] = type1;
-    type[1] = type2;
     skill[0] = s1;
     skill[1] = s2;
     skill[2] = s3;
@@ -122,6 +112,10 @@ void Pokemon::addDef(int def) {
 void Pokemon::addSpd(int spd) {
     speed += spd;
     cout << name << "의 스피드가 " << spd << " 올랐다!" << endl;
+}
+
+float Pokemon::typeSnW(PokemonType::type t) {
+    return ((type1 != PokemonType::NONE) ? typeChart[t][type1] : 1) * ((type2 != PokemonType::NONE) ? typeChart[t][type2] : 1);
 }
 
 void Pokemon::damaged(int d) {

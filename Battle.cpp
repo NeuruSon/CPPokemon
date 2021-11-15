@@ -7,49 +7,43 @@
 #include <string>
 #include <sstream>
 #include <random>
+#include <map>
+#include <dsound.h>
 #pragma comment(lib, "Winmm.lib")
 using namespace std;
 
-enum State {
-    //얼마나 세분화? 
-    //진행, 수 고민중, 끝?
-    STATE_BATTLE,
-    STATE_BATTLE_END
-};
+namespace State {
+    enum type {
+        //얼마나 세분화? 
+        //진행, 수 고민중, 끝?
+        BATTLE_ = 0,
+        BATTLE_ING = 1,
+        BATTLE_END = 2
+    };
+}
 
-enum TrainerType {
-   TRAINERTYPE_PLAYER, //플레이어 
-   TRAINERTYPE_CHAMPION, //챔피언
-   TRAINERTYPE_VILLAIN, //빌런
-   TRAINERTYPE_VILLAINMASTER, //빌런 우두머리
-   TRAINERTYPE_TRAINER, //일반 포켓몬 트레이너
-   TRAINERTYPE_NONTRAINER //야생 포켓몬
-};
+namespace PokemonStatus {
+    enum type {
+        HEALTHY, //상태이상 없음
+        PARALYZED, //마비
+        POISONED, //독
+        BADLY_POISONED, //맹독
+        BURNED, //화상
+        FROZEN, //냉동
+        FLINCH, //풀죽음
+        CONFUSED, //혼란
+        INFATUATION, //헤롱헤롱
+        LEECH_SEED, //씨뿌리기
+        SLEEP, //잠듦
+        FAINTED //행동불능
+    };
+}
 
-enum PokemonType {
-    POKEMONTYPE_NORMAL, //노말
-    POKEMONTYPE_FIRE, //불꽃
-    POKEMONTYPE_WATER, //물
-    POKEMONTYPE_GRASS, //풀
-    POKEMONTYPE_ELECTRIC, //전기
-    POKEMONTYPE_ICE, //얼음
-    POKEMONTYPE_FIGHTING, //격투
-    POKEMONTYPE_POISON, //독
-    POKEMONTYPE_FLYING, //비행 
-    POKEMONTYPE_PSYCHIC, //에스퍼
-    POKEMONTYPE_BUG, //벌레
-    POKEMONTYPE_ROCK, //바위
-    POKEMONTYPE_GHOST, //고스트
-    POKEMONTYPE_DRAGON, //드래곤
-    POKEMONTYPE_DARK, //악
-    POKEMONTYPE_STEEL //강철
-};
-
-//수정한 대미지 = (((레벨*2/5)+2)*위력*공격/50)/방어*랜덤수/100
-int damage(Pokemon* a, Pokemon* na, int p) { 
-    int d = 0;
+//수정한 대미지 = (((레벨*2/5)+2)*상성*위력*공격/50)/방어*랜덤수/100
+int damage(Pokemon* a, Pokemon* na, Skill s) { 
+    float d = 0;
     int randNum = rand()%16 + 85; // 85~100
-    d = (((a->getExp() * 2 / 5) + 2) * p * a->getAtk() / 50) / na->getDef() * randNum / 100;
+    d = (((a->getExp() * 2 / 5) + 2) * na->typeSnW(s.getType()) * s.getPw() * a->getAtk() / 50) / na->getDef() * randNum / 100;
     return d;
 }
 
@@ -84,51 +78,100 @@ Pokemon* changePkm(Trainer &t, Pokemon* p) {
     }
 
     cout << endl << p->getName() << " 돌아와!" << endl;
+    mciSendString("play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
     Sleep(1500);
     cout << "가랏! " << t.getPkm(changeNum-1)->getName() << "!" << endl;
+    mciSendString("play \"In-Battle_Recall_Switch_Pokeball.mp3\"", NULL, 0, NULL);
     Sleep(1000);
     return t.getPkm(changeNum-1);
 }
 
 Pokemon* changePkm_cham(Trainer &c, Pokemon* cp, int n) {
-    int changeNum = n;
+    mciSendString("play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
     Sleep(1500);
-    cout << endl << c.getName() << "은(는) " << c.getPkm(changeNum-1)->getName() << "을(를) 내보냈다!" << endl;
+    cout << endl << c.getName() << "은(는) " << c.getPkm(n)->getName() << "을(를) 내보냈다!" << endl;
+    mciSendString("play \"In-Battle_Recall_Switch_Pokeball.mp3\"", NULL, 0, NULL);
     Sleep(1000);
-    return c.getPkm(changeNum-1);
+    return c.getPkm(n);
 }
 
-void knockdown(Pokemon* p1, Pokemon* p2, Trainer& t, Trainer& c) {
+int checkAlivePokeNum(Trainer& t) {
+    int alive[6] = { 6 }; //0~5가 유효값이므로 6으로 초기화
+    int a = -1;
+    for (int i = 0; i < 6; ++i) {
+        if (t.getPkm(i)->isActive() == true) {
+            ++a;
+            alive[a] = i;
+            //cout << "[" << a << "] " << i << " : " << t.getPkm(i)->isActive() << endl;
+        }
+    }
+    if (a >= 0) {
+        random_device rd;
+        mt19937 gen(rd());
+        uniform_int_distribution<int> randomNum(0, a);
+        while (t.getAlivePkmCount() > 0) {
+            int temp = randomNum(rd);
+            //cout << "alive[" << temp << "] : " << alive[temp] << endl;
+            return alive[temp];
+        }
+    }
+    return 0;
+}
+
+bool isFainted(Pokemon* p1, Pokemon* p2, Trainer& t, Trainer& c, Pokemon** pp1, Pokemon** pp2) {
     Sleep(1000);
+    bool flagP1 = false, flagP2 = false;
     if (t.getAlivePkmCount() > 0 && c.getAlivePkmCount() > 0) {
         if (p1->isActive() == false) {
+            mciSendString("play \"In-Battle_Faint_No_Health.mp3\"", NULL, 0, NULL);
             Sleep(1000);
-            p1 = changePkm(t, p1);
+            *pp1 = changePkm(t, p1);
+            flagP1 = true;
         }
         if (p2->isActive() == false) {
+            mciSendString("play \"In-Battle_Faint_No_Health.mp3\"", NULL, 0, NULL);
             Sleep(1000);
-            p2 = changePkm_cham(c, p2, 5);
+            *pp2 = changePkm_cham(c, p2, checkAlivePokeNum(c));
+            flagP2 = true;
+        }
+        if (flagP1 == true || flagP2 == true) {
+            return true;
         }
     }
-    else {
-        return;
-    }
+
+    return false;
 }
 
 //행동
 void action(Trainer &t, Pokemon* a, Pokemon* na, int n) {
     if (n < 5 && n > 0) {
         string skillName = a->getSkill(n-1).getName();
-        int power = a->getSkill(n-1).getPw();
 
         if (a->getHp() > 0 && na->getHp() > 0) {
             Sleep(1000);
             cout << endl << a->getName() << "의 " << skillName << "!" << endl;
+
+            float f = na->typeSnW(a->getSkill(n - 1).getType());
+            if (f >= 2) {
+                mciSendString("play \"Hit_Super_Effective.mp3\"", NULL, 0, NULL);
+                cout << "효과가 굉장했다!" << endl;
+            }
+            else if (f < 1 && f > 0) {
+                mciSendString("play \"Hit_Weak_Not_Very_Effective.mp3\"", NULL, 0, NULL);
+                cout << "효과가 별로인 것 같다..." << endl;
+            }
+            else if (f == 0) {
+                cout << "효과가 없는 것 같다..." << endl;
+            }
+            else {
+                mciSendString("play \"Hit_Normal_Damage.mp3\"", NULL, 0, NULL);
+            }
             Sleep(1000);
-            na->damaged(damage(a, na, power));
+            na->damaged(damage(a, na, a->getSkill(n-1)));
         }
     }
     else if (n == 5) {
+        mciSendString("play \"In-Battle_Heal_HP_Restore.mp3\"", NULL, 0, NULL);
         cout << endl << t.getName() << "은(는) 풀 상처약을 사용했다!" << endl; //item의 경우 무조건 선제 사용 
         a->addHp(a->getFHp());
     }
@@ -153,8 +196,10 @@ void battle(Trainer &t, Trainer &c) {
         PlaySound(TEXT("2_67.wav"), NULL, SND_FILENAME | SND_LOOP | SND_ASYNC);
         cout << c.getName() << "이 승부를 걸어왔다!" << endl;
         Sleep(3000);
+        mciSendString("play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
         cout << c.getName() << "은 " << cp->getName() << "을(를) 내보냈다!" << endl;
         Sleep(1000);
+        mciSendString("play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
         cout << "가랏! " << p->getName() << "!" << endl;
         Sleep(1000);
     }
@@ -240,7 +285,9 @@ void battle(Trainer &t, Trainer &c) {
         p->coloredName(); cout << " " << p->getHp() << " / " << p->getFHp() << "\t\t"; cp->coloredName(); cout << endl;
 
         //쓰러졌다면 교체
-        knockdown(p, cp, t, c);
+        if (isFainted(p, cp, t, c, &p, &cp) == true) {
+            continue;
+        }
 
         //턴 후반
         if (isPFirst == false && p->isActive() == true) { //플레이어 후공
@@ -257,7 +304,9 @@ void battle(Trainer &t, Trainer &c) {
         p->coloredName(); cout << " " << p->getHp() << " / " << p->getFHp() << "\t\t"; cp->coloredName(); cout << endl;
 
         //쓰러졌다면 교체 
-        knockdown(p, cp, t, c);
+        if (isFainted(p, cp, t, c, &p, &cp) == true) {
+            continue;
+        }
     }
 
     //승패
@@ -284,6 +333,35 @@ void battle(Trainer &t, Trainer &c) {
     else { cout << "몬가... 몬가 잘못댓슴......" << endl; }
 }
 
+map <string, PokemonType::type> const type = {
+    {"노말", PokemonType::NORMAL}, //노말
+    {"불꽃", PokemonType::FIRE}, //불꽃
+    {"물", PokemonType::WATER}, //물
+    {"풀", PokemonType::GRASS}, //풀
+    {"전기", PokemonType::ELECTRIC}, //전기
+    {"얼음", PokemonType::ICE}, //얼음
+    {"격투", PokemonType::FIGHTING}, //격투
+    {"독", PokemonType::POISON}, //독
+    {"땅", PokemonType::GROUND}, //땅
+    {"비행", PokemonType::FLYING}, //비행 
+    {"에스퍼",PokemonType::PSYCHIC}, //에스퍼
+    {"벌레", PokemonType::BUG}, //벌레
+    {"바위", PokemonType::ROCK}, //바위
+    {"고스트", PokemonType::GHOST}, //고스트
+    {"드래곤", PokemonType::DRAGON}, //드래곤
+    {"악", PokemonType::DARK}, //악
+    {"강철", PokemonType::STEEL}, //강철
+    {"-", PokemonType::NONE} //없음
+};
+
+enum PokemonType::type typeParser(string s) {
+    auto it = type.find(s);
+    if (it != type.end()) {
+        return it->second;
+    }
+    else { return PokemonType::NONE; }
+}
+
 void loadSkills(Skill s[38]) {
     //줄별로 읽고, 해당 줄에서 다시 나눠주기. 
     string ta[7];
@@ -305,7 +383,7 @@ void loadSkills(Skill s[38]) {
             }
             if (ta[2] == "-") { ta[2] = "0"; }
             if (ta[3] == "-") { ta[3] = "100"; }
-            s[i] = Skill(ta[0], ta[1], stoi(ta[2]), stoi(ta[3]), stoi(ta[4]), stoi(ta[5]), ta[6]);
+            s[i] = Skill(ta[0], typeParser(ta[1]), stoi(ta[2]), stoi(ta[3]), stoi(ta[4]), stoi(ta[5]), ta[6]);
             ++i;
         }
         cout << "skill load complete..." << endl;
@@ -315,20 +393,20 @@ void loadSkills(Skill s[38]) {
 
 void loadPokemon(Pokemon p[6], string code, Skill s[]) {
     if (code == "챔피언 난천") {
-        p[0] = Pokemon("화강돌", 61, 143, 92, 108, 35, "고스트", "악", s[19], s[15], s[26], s[1], "챔피언 난천");
-        p[1] = Pokemon("로즈레이드", 60, 152, 70, 55, 90, "풀", "독", s[17], s[16], s[22], s[20], "챔피언 난천");
-        p[2] = Pokemon("토게키스", 60, 182, 50, 95, 80, "노말", "비행", s[33], s[21], s[11], s[28], "챔피언 난천");
-        p[3] = Pokemon("루카리오", 63, 173, 110, 70, 90, "격투", "강철", s[33], s[24], s[30], s[15], "챔피언 난천");
-        p[4] = Pokemon("밀로틱", 63, 204, 60, 79, 81, "물", "-", s[11], s[12], s[5], s[32], "챔피언 난천");
-        p[5] = Pokemon("한카리아스", 66, 231, 130, 95, 102, "드래곤", "땅", s[6], s[30], s[3], s[2], "챔피언 난천");
+        p[0] = Pokemon("화강돌", 61, 143, 92, 108, 35, PokemonType::GHOST, PokemonType::DARK, s[19], s[15], s[26], s[1], "챔피언 난천");
+        p[1] = Pokemon("로즈레이드", 60, 152, 70, 55, 90, PokemonType::GRASS, PokemonType::POISON, s[17], s[16], s[22], s[20], "챔피언 난천");
+        p[2] = Pokemon("토게키스", 60, 182, 50, 95, 80, PokemonType::NORMAL, PokemonType::FLYING, s[33], s[21], s[11], s[28], "챔피언 난천");
+        p[3] = Pokemon("루카리오", 63, 173, 110, 70, 90, PokemonType::FIGHTING, PokemonType::STEEL, s[33], s[24], s[30], s[15], "챔피언 난천");
+        p[4] = Pokemon("밀로틱", 63, 204, 60, 79, 81, PokemonType::WATER, PokemonType::NONE, s[11], s[12], s[5], s[32], "챔피언 난천");
+        p[5] = Pokemon("한카리아스", 66, 231, 130, 95, 102, PokemonType::DRAGON, PokemonType::GROUND, s[6], s[30], s[3], s[2], "챔피언 난천");
     }
     else {
-        p[0] = Pokemon("초염몽", 72, 206, 104, 71, 108, "불꽃", "격투", s[14], s[37], s[8], s[35], code);
-        p[1] = Pokemon("펄기아", 56, 176, 120, 100, 100, "물", "드래곤", s[0], s[11], s[25], s[7], code);
-        p[2] = Pokemon("루카리오", 60, 164, 120, 80, 89, "격투", "강철", s[13], s[33], s[27], s[24], code);
-        p[3] = Pokemon("라프라스", 61, 240, 85, 80, 60, "물", "얼음", s[5], s[36], s[11], s[10], code);
-        p[4] = Pokemon("포푸니라", 59, 162, 120, 65, 125, "악", "얼음", s[3], s[19], s[9], s[29], code);
-        p[5] = Pokemon("갸라도스", 70, 227, 125, 79, 81, "물", "비행", s[23], s[26], s[31], s[34], code);
+        p[0] = Pokemon("초염몽", 72, 206, 104, 71, 108, PokemonType::FIRE, PokemonType::FIGHTING, s[14], s[37], s[8], s[35], code);
+        p[1] = Pokemon("펄기아", 56, 176, 120, 100, 100, PokemonType::WATER, PokemonType::DRAGON, s[0], s[11], s[25], s[7], code);
+        p[2] = Pokemon("루카리오", 60, 164, 120, 80, 89, PokemonType::FIGHTING, PokemonType::STEEL, s[13], s[33], s[27], s[24], code);
+        p[3] = Pokemon("라프라스", 61, 240, 85, 80, 60, PokemonType::WATER, PokemonType::ICE, s[5], s[36], s[11], s[10], code);
+        p[4] = Pokemon("포푸니라", 59, 162, 120, 65, 125, PokemonType::DARK, PokemonType::ICE, s[3], s[19], s[9], s[29], code);
+        p[5] = Pokemon("갸라도스", 70, 227, 125, 79, 81, PokemonType::WATER, PokemonType::FLYING, s[23], s[26], s[31], s[34], code);
     }
 }
 
@@ -371,8 +449,8 @@ int main() {
     loadPokemon(p1, playerName, skills);
     loadPokemon(p2, "챔피언 난천", skills);
 
-    Trainer t(playerName, 12000, p1);
-    Trainer c("챔피언 난천", 14000, p2);
+    Trainer t(playerName, 12000, p1, TrainerType::PLAYER);
+    Trainer c("챔피언 난천", 14000, p2, TrainerType::CHAMPION);
 
     battle(t, c);
 
