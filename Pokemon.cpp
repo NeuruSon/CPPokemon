@@ -87,11 +87,11 @@ bool Pokemon::isActive() {
 
 void Pokemon::addExp(int exp) {
     experience += exp;
-    cout << name << "은(는) " << exp << "의 경험치를 획득했다!" << endl;
+    cout << endl << name << "은(는) " << exp << "의 경험치를 획득했다!" << endl;
 }
 void Pokemon::addFHp(int fhp) {
     f_hitPoint += fhp;
-    cout << name << "의 최대 체력이 " << fhp << " 증가했다!" << endl;
+    cout << endl << name << "의 최대 체력이 " << fhp << " 증가했다!" << endl;
 }
 void Pokemon::addHp(int hp) {
     if (hitPoint + hp > f_hitPoint) { //회복 후 체력이 최대 체력을 넘을 경우 최대 체력으로 고정.. 하려고 했으나 확인도 할 겸 회복 가능량을 hp로 대체해 그만큼만 회복케 함.  
@@ -99,19 +99,19 @@ void Pokemon::addHp(int hp) {
         hitPoint += hp;
     }
     else { hitPoint += hp; }    
-    cout << name << "의 체력이 " << hp << " 회복됐다!" << endl;
+    cout << endl << name << "의 체력이 " << hp << " 회복됐다!" << endl;
 }
 void Pokemon::addAtk(int atk) {
     attackPoint += atk;
-    cout << name << "의 공격이 " << atk << " 올랐다!" << endl;
+    cout << endl << name << "의 공격이 " << atk << " 올랐다!" << endl;
 }
 void Pokemon::addDef(int def) {
     defencePoint += def;
-    cout << name << "의 방어가 " << def << " 올랐다!" << endl;
+    cout << endl << name << "의 방어가 " << def << " 올랐다!" << endl;
 }
 void Pokemon::addSpd(int spd) {
     speed += spd;
-    cout << name << "의 스피드가 " << spd << " 올랐다!" << endl;
+    cout << endl << name << "의 스피드가 " << spd << " 올랐다!" << endl;
 }
 
 float Pokemon::typeSnW(PokemonType::type t) {
@@ -123,23 +123,130 @@ void Pokemon::damaged(int d) {
         hitPoint = 0;
     }
     else { hitPoint -= d; }
-    cout << name << "은(는) " << d << "의 대미지를 입었다!" << endl;
+    cout << endl << name << "은(는) " << d << "의 대미지를 입었다!" << endl;
 
     if (hitPoint <= 0) {
         setDeactive();
     }
 }
 
-void Pokemon::printInfo() {
-    cout  << "이  름: " << name << endl << "경험치: " << experience << endl << "체  력: " << hitPoint << " / " << f_hitPoint << endl << "공  격: " << attackPoint << endl << "방  어: " << defencePoint << endl << "마스터: " << master << endl << endl;
+void Pokemon::displayHP(int d) { //양수일 경우 회복, 음수일 경우 대미지 
+    const int fullHP = f_hitPoint;
+    int HP = hitPoint; 
+
+    const char bar = '-';
+    const char blank = ' ';
+    const int len = 20;
+    const int speed = 50;
+    int dest = HP + d; //목표치 
+    float tick = (float)100 / len;
+    int destBarCount;
+    int curBarCount;
+    float percent;
+
+    if (dest > fullHP) { dest = fullHP; }
+    else if (dest < 0) { dest = 0; }
+
+    percent = (float)dest / fullHP * 100;
+    if (percent > 0 && percent < 1) { percent = 1; } //1 미만 0 초과의 값을 0으로 표기하지 않도록 
+    destBarCount = percent / tick;
+    curBarCount = ((float)HP / fullHP * 100) / tick;
+    if (curBarCount == 0 && HP > 0) { curBarCount = 1; }
+
+    //cout << dest << " " << fullHP << " " << percent << " " << tick << " " << destBarCount << " " << curBarCount << endl;
+
+    cout << name << "    [";
+    //베이스 출력 
+    if (curBarCount > len * 0.9) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //Green
+    }
+    else if (curBarCount > len * 0.51) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10); //Light Green
+    }
+    else if (curBarCount > len * 0.35) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14); //Light Yellow
+    }
+    else if (curBarCount > len * 0.25) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //Yellow
+    }
+    else if (curBarCount > len * 0.15) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12); //Light Red
+    }
+    else if (curBarCount > 0) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4); //Red
+    }
+    else if (curBarCount <= 0) {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8); //Gray
+    }
+    else {
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8); //Gray
+    }
+    for (int i = 0; i < len; ++i) {
+        if (i < curBarCount) { cout << bar; }
+        else { cout << blank; }
+    }
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+    cout << "]";
+
+    //cout << "       " << curBarCount << "/" << destBarCount << "       ";
+
+    while (curBarCount != destBarCount) {
+        cout << "\r";
+        if (curBarCount > destBarCount) {
+            //감소 
+            --curBarCount;
+        }
+        else if (curBarCount < destBarCount) {
+            //증가 
+            ++curBarCount;
+        }
+        else { /*동일*/ }
+
+        cout << name << "    [";
+        
+        if (curBarCount > len * 0.9) { 
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //Green
+        }
+        else if (curBarCount > len * 0.51) {
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10); //Light Green
+        }
+        else if (curBarCount > len * 0.35) {
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14); //Light Yellow
+        }
+        else if (curBarCount > len * 0.25) {
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //Yellow
+        }
+        else if (curBarCount > len * 0.15) {
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12); //Light Red
+        }
+        else if (curBarCount > 0) {
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4); //Red
+        }
+        else if (curBarCount <= 0) {
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8); //Gray
+        }
+        else {
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 8); //Gray
+        }
+        for (int i = 0; i < len; ++i) {
+            if (i < curBarCount) { cout << bar; }
+            else { cout << blank; }
+        }
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+        cout << "]";
+        //cout << "       " << curBarCount << "/" << destBarCount << "       ";
+        Sleep(500);
+    }
+    HP = dest;
 }
+
 void Pokemon::coloredName() {
     if (hitPoint > f_hitPoint * 0.9) {
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //Green
         cout << name;
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
     }
-    else if (hitPoint > f_hitPoint * 0.5) {
+    else if (hitPoint > f_hitPoint * 0.51) {
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10); //Light Green
         cout << name;
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);

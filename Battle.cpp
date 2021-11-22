@@ -78,19 +78,19 @@ Pokemon* changePkm(Trainer &t, Pokemon* p) {
     }
 
     cout << endl << p->getName() << " 돌아와!" << endl;
-    mciSendString("play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
+    mciSendString(L"play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
     Sleep(1500);
     cout << "가랏! " << t.getPkm(changeNum-1)->getName() << "!" << endl;
-    mciSendString("play \"In-Battle_Recall_Switch_Pokeball.mp3\"", NULL, 0, NULL);
+    mciSendString(L"play \"In-Battle_Recall_Switch_Pokeball.mp3\"", NULL, 0, NULL);
     Sleep(1000);
     return t.getPkm(changeNum-1);
 }
 
 Pokemon* changePkm_cham(Trainer &c, Pokemon* cp, int n) {
-    mciSendString("play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
+    mciSendString(L"play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
     Sleep(1500);
     cout << endl << c.getName() << "은(는) " << c.getPkm(n)->getName() << "을(를) 내보냈다!" << endl;
-    mciSendString("play \"In-Battle_Recall_Switch_Pokeball.mp3\"", NULL, 0, NULL);
+    mciSendString(L"play \"In-Battle_Recall_Switch_Pokeball.mp3\"", NULL, 0, NULL);
     Sleep(1000);
     return c.getPkm(n);
 }
@@ -123,13 +123,13 @@ bool isFainted(Pokemon* p1, Pokemon* p2, Trainer& t, Trainer& c, Pokemon** pp1, 
     bool flagP1 = false, flagP2 = false;
     if (t.getAlivePkmCount() > 0 && c.getAlivePkmCount() > 0) {
         if (p1->isActive() == false) {
-            mciSendString("play \"In-Battle_Faint_No_Health.mp3\"", NULL, 0, NULL);
+            mciSendString(L"play \"In-Battle_Faint_No_Health.mp3\"", NULL, 0, NULL);
             Sleep(1000);
             *pp1 = changePkm(t, p1);
             flagP1 = true;
         }
         if (p2->isActive() == false) {
-            mciSendString("play \"In-Battle_Faint_No_Health.mp3\"", NULL, 0, NULL);
+            mciSendString(L"play \"In-Battle_Faint_No_Health.mp3\"", NULL, 0, NULL);
             Sleep(1000);
             *pp2 = changePkm_cham(c, p2, checkAlivePokeNum(c));
             flagP2 = true;
@@ -153,26 +153,28 @@ void action(Trainer &t, Pokemon* a, Pokemon* na, int n) {
 
             float f = na->typeSnW(a->getSkill(n - 1).getType());
             if (f >= 2) {
-                mciSendString("play \"Hit_Super_Effective.mp3\"", NULL, 0, NULL);
+                mciSendString(L"play \"Hit_Super_Effective.mp3\"", NULL, 0, NULL);
                 cout << "효과가 굉장했다!" << endl;
             }
             else if (f < 1 && f > 0) {
-                mciSendString("play \"Hit_Weak_Not_Very_Effective.mp3\"", NULL, 0, NULL);
+                mciSendString(L"play \"Hit_Weak_Not_Very_Effective.mp3\"", NULL, 0, NULL);
                 cout << "효과가 별로인 것 같다..." << endl;
             }
             else if (f == 0) {
                 cout << "효과가 없는 것 같다..." << endl;
             }
             else {
-                mciSendString("play \"Hit_Normal_Damage.mp3\"", NULL, 0, NULL);
+                mciSendString(L"play \"Hit_Normal_Damage.mp3\"", NULL, 0, NULL);
             }
             Sleep(1000);
+            na->displayHP(-1 * damage(a, na, a->getSkill(n - 1))); //display 먼저 실행해야 안 꼬임 
             na->damaged(damage(a, na, a->getSkill(n-1)));
         }
     }
     else if (n == 5) {
-        mciSendString("play \"In-Battle_Heal_HP_Restore.mp3\"", NULL, 0, NULL);
+        mciSendString(L"play \"In-Battle_Heal_HP_Restore.mp3\"", NULL, 0, NULL);
         cout << endl << t.getName() << "은(는) 풀 상처약을 사용했다!" << endl; //item의 경우 무조건 선제 사용 
+        a->displayHP(a->getFHp()); //display 먼저 실행해야 안 꼬임 
         a->addHp(a->getFHp());
     }
     //else if (n == 6) { //포켓몬 교체
@@ -196,10 +198,10 @@ void battle(Trainer &t, Trainer &c) {
         PlaySound(TEXT("2_67.wav"), NULL, SND_FILENAME | SND_LOOP | SND_ASYNC);
         cout << c.getName() << "이 승부를 걸어왔다!" << endl;
         Sleep(3000);
-        mciSendString("play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
+        mciSendString(L"play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
         cout << c.getName() << "은 " << cp->getName() << "을(를) 내보냈다!" << endl;
         Sleep(1000);
-        mciSendString("play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
+        mciSendString(L"play \"Baton_Pass_part_2.mp3\"", NULL, 0, NULL);
         cout << "가랏! " << p->getName() << "!" << endl;
         Sleep(1000);
     }
@@ -208,9 +210,11 @@ void battle(Trainer &t, Trainer &c) {
     while (p->getHp() > 0 && cp->getHp() > 0) { //조건: 둘 다 전투가능 상태라면 계속 진행 
         char todo = '9';
         Sleep(1000);
-        cout << endl; p->coloredName();
-        cout << " " << p->getHp() << " / " << p->getFHp() << "\t\t"; cp->coloredName();
-        cout << endl << p->getName() << "은(는) 무엇을 할까?" << endl <<
+        cout << endl << "----------------------------------------------------------" << endl << endl;
+        cp->displayHP(0); cout << endl;
+        cout << "-> "; p->displayHP(0); cout << " " << p->getHp() << " / " << p->getFHp();
+
+        cout << endl << endl << p->getName() << "은(는) 무엇을 할까?" << endl <<
             "[0] " << "도망간다" <<
             "  [1] " << p->getSkill(0).getName() <<
             "  [2] " << p->getSkill(1).getName() <<
@@ -219,7 +223,7 @@ void battle(Trainer &t, Trainer &c) {
             "  [5] " << "회복" <<
             "  [6] " << "포켓몬교체" <<
             endl << "  >>> ";
-        cin >> todo; 
+        cin >> todo;
 
         pPr = 0; cpPr = 0;
 
@@ -274,16 +278,17 @@ void battle(Trainer &t, Trainer &c) {
         if (isPFirst == true && p->isActive() == true) { //플레이어 선공
             if (todoNum < 6) { action(t, p, cp, todoNum); }
             else { p = changePkm(t, p); }
-        } 
+        }
         else if (isPFirst == false && cp->isActive() == true) { //챔피언 선공 
             if (cTodoNum < 6) { action(c, cp, p, cTodoNum); }
-            else { 
+            else {
                 //챔피언 포켓몬 교체 알고리즘 
-                cp = changePkm_cham(c, cp, 3); 
+                cp = changePkm_cham(c, cp, 3);
             }
-        } 
-        p->coloredName(); cout << " " << p->getHp() << " / " << p->getFHp() << "\t\t"; cp->coloredName(); cout << endl;
-
+        }
+        cout << endl; cp->displayHP(0); cout << endl;
+        p->displayHP(0); cout << " " << p->getHp() << " / " << p->getFHp() << endl;
+        
         //쓰러졌다면 교체
         if (isFainted(p, cp, t, c, &p, &cp) == true) {
             continue;
@@ -301,10 +306,11 @@ void battle(Trainer &t, Trainer &c) {
                 cp = changePkm_cham(c, cp, 3);
             }
         }
-        p->coloredName(); cout << " " << p->getHp() << " / " << p->getFHp() << "\t\t"; cp->coloredName(); cout << endl;
 
         //쓰러졌다면 교체 
         if (isFainted(p, cp, t, c, &p, &cp) == true) {
+            cout << endl << endl; cp->displayHP(0); cout << endl;
+            p->displayHP(0); cout << " " << p->getHp() << " / " << p->getFHp();
             continue;
         }
     }
@@ -372,7 +378,7 @@ void loadSkills(Skill s[38]) {
         cout << "none" << endl;
     }
     else { 
-        cout << "loading skills..." << endl;
+        cout << "loading skills...";
         while (!skillsCSV.eof()) {
             getline(skillsCSV, temp);
             stringstream tempSS(temp);
@@ -386,7 +392,7 @@ void loadSkills(Skill s[38]) {
             s[i] = Skill(ta[0], typeParser(ta[1]), stoi(ta[2]), stoi(ta[3]), stoi(ta[4]), stoi(ta[5]), ta[6]);
             ++i;
         }
-        cout << "skill load complete..." << endl;
+        cout << "\rskill load complete..." << endl;
         skillsCSV.close();
     }
 }

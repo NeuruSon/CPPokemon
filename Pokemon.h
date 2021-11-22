@@ -77,6 +77,6 @@ class Pokemon {
         float typeSnW(PokemonType::type t); //타입 상성 Strength and Weakness
         void damaged(int d); //대미지
 
-        void printInfo();
+        void displayHP(int d);
         void coloredName();
 };
