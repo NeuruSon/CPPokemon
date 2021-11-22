@@ -167,8 +167,9 @@ void action(Trainer &t, Pokemon* a, Pokemon* na, int n) {
                 mciSendString(L"play \"Hit_Normal_Damage.mp3\"", NULL, 0, NULL);
             }
             Sleep(1000);
-            na->displayHP(-1 * damage(a, na, a->getSkill(n - 1))); //display 먼저 실행해야 안 꼬임 
-            na->damaged(damage(a, na, a->getSkill(n-1)));
+            int d = damage(a, na, a->getSkill(n - 1));
+            na->displayHP(-1 * d); //display 먼저 실행해야 안 꼬임 
+            na->damaged(d);
         }
     }
     else if (n == 5) {
@@ -211,8 +212,8 @@ void battle(Trainer &t, Trainer &c) {
         char todo = '9';
         Sleep(1000);
         cout << endl << "----------------------------------------------------------" << endl << endl;
-        cp->displayHP(0); cout << endl;
-        cout << "-> "; p->displayHP(0); cout << " " << p->getHp() << " / " << p->getFHp();
+        cout << "\t"; cp->displayHP(0); cout << endl; 
+        cout << "->\t"; p->displayHP(0); cout << " " << p->getHp() << " / " << p->getFHp();
 
         cout << endl << endl << p->getName() << "은(는) 무엇을 할까?" << endl <<
             "[0] " << "도망간다" <<
@@ -286,8 +287,8 @@ void battle(Trainer &t, Trainer &c) {
                 cp = changePkm_cham(c, cp, 3);
             }
         }
-        cout << endl; cp->displayHP(0); cout << endl;
-        p->displayHP(0); cout << " " << p->getHp() << " / " << p->getFHp() << endl;
+        cout << endl; //cp->displayHP(0); cout << endl;
+        //p->displayHP(0); cout << " " << p->getHp() << " / " << p->getFHp() << endl;
         
         //쓰러졌다면 교체
         if (isFainted(p, cp, t, c, &p, &cp) == true) {
@@ -313,6 +314,7 @@ void battle(Trainer &t, Trainer &c) {
             p->displayHP(0); cout << " " << p->getHp() << " / " << p->getFHp();
             continue;
         }
+        else { cout << endl; }
     }
 
     //승패

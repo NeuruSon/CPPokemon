@@ -87,11 +87,11 @@ bool Pokemon::isActive() {
 
 void Pokemon::addExp(int exp) {
     experience += exp;
-    cout << endl << name << "은(는) " << exp << "의 경험치를 획득했다!" << endl;
+    cout << endl << name << "은(는) " << exp << "의 경험치를 획득했다!";
 }
 void Pokemon::addFHp(int fhp) {
     f_hitPoint += fhp;
-    cout << endl << name << "의 최대 체력이 " << fhp << " 증가했다!" << endl;
+    cout << endl << name << "의 최대 체력이 " << fhp << " 증가했다!";
 }
 void Pokemon::addHp(int hp) {
     if (hitPoint + hp > f_hitPoint) { //회복 후 체력이 최대 체력을 넘을 경우 최대 체력으로 고정.. 하려고 했으나 확인도 할 겸 회복 가능량을 hp로 대체해 그만큼만 회복케 함.  
@@ -99,19 +99,19 @@ void Pokemon::addHp(int hp) {
         hitPoint += hp;
     }
     else { hitPoint += hp; }    
-    cout << endl << name << "의 체력이 " << hp << " 회복됐다!" << endl;
+    cout << endl << name << "의 체력이 " << hp << " 회복됐다!";
 }
 void Pokemon::addAtk(int atk) {
     attackPoint += atk;
-    cout << endl << name << "의 공격이 " << atk << " 올랐다!" << endl;
+    cout << endl << name << "의 공격이 " << atk << " 올랐다!";
 }
 void Pokemon::addDef(int def) {
     defencePoint += def;
-    cout << endl << name << "의 방어가 " << def << " 올랐다!" << endl;
+    cout << endl << name << "의 방어가 " << def << " 올랐다!";
 }
 void Pokemon::addSpd(int spd) {
     speed += spd;
-    cout << endl << name << "의 스피드가 " << spd << " 올랐다!" << endl;
+    cout << endl << name << "의 스피드가 " << spd << " 올랐다!";
 }
 
 float Pokemon::typeSnW(PokemonType::type t) {
@@ -123,7 +123,7 @@ void Pokemon::damaged(int d) {
         hitPoint = 0;
     }
     else { hitPoint -= d; }
-    cout << endl << name << "은(는) " << d << "의 대미지를 입었다!" << endl;
+    //cout << endl << name << "은(는) " << d << "의 대미지를 입었다!" << endl;
 
     if (hitPoint <= 0) {
         setDeactive();
@@ -133,29 +133,26 @@ void Pokemon::damaged(int d) {
 void Pokemon::displayHP(int d) { //양수일 경우 회복, 음수일 경우 대미지 
     const int fullHP = f_hitPoint;
     int HP = hitPoint; 
-
     const char bar = '-';
     const char blank = ' ';
     const int len = 20;
     const int speed = 50;
-    int dest = HP + d; //목표치 
     float tick = (float)100 / len;
     int destBarCount;
     int curBarCount;
     float percent;
 
+    int dest = HP + d; //목표치 
     if (dest > fullHP) { dest = fullHP; }
     else if (dest < 0) { dest = 0; }
 
-    percent = (float)dest / fullHP * 100;
-    if (percent > 0 && percent < 1) { percent = 1; } //1 미만 0 초과의 값을 0으로 표기하지 않도록 
+    percent = (float) dest / fullHP * 100;
+    if (percent > 0 && percent < 5) { percent = 5; } //5 미만 0 초과의 값을 0으로 표기하지 않도록 
     destBarCount = percent / tick;
     curBarCount = ((float)HP / fullHP * 100) / tick;
     if (curBarCount == 0 && HP > 0) { curBarCount = 1; }
 
-    //cout << dest << " " << fullHP << " " << percent << " " << tick << " " << destBarCount << " " << curBarCount << endl;
-
-    cout << name << "    [";
+    cout << name << "\t[";
     //베이스 출력 
     if (curBarCount > len * 0.9) {
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //Green
@@ -188,8 +185,6 @@ void Pokemon::displayHP(int d) { //양수일 경우 회복, 음수일 경우 대
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
     cout << "]";
 
-    //cout << "       " << curBarCount << "/" << destBarCount << "       ";
-
     while (curBarCount != destBarCount) {
         cout << "\r";
         if (curBarCount > destBarCount) {
@@ -202,7 +197,7 @@ void Pokemon::displayHP(int d) { //양수일 경우 회복, 음수일 경우 대
         }
         else { /*동일*/ }
 
-        cout << name << "    [";
+        cout << name << "\t[";
         
         if (curBarCount > len * 0.9) { 
             SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //Green
@@ -234,7 +229,6 @@ void Pokemon::displayHP(int d) { //양수일 경우 회복, 음수일 경우 대
         }
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
         cout << "]";
-        //cout << "       " << curBarCount << "/" << destBarCount << "       ";
         Sleep(500);
     }
     HP = dest;
