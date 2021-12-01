@@ -3,6 +3,7 @@
 #include "Skill.h"
 #include <string>
 #include <iostream>
+#include <iomanip>
 #include <windows.h>
 using namespace std;
 
@@ -133,7 +134,7 @@ void Pokemon::damaged(int d) {
 void Pokemon::displayHP(int d) { //양수일 경우 회복, 음수일 경우 대미지 
     const int fullHP = f_hitPoint;
     int HP = hitPoint; 
-    const char bar = '-';
+    const char bar = '=';
     const char blank = ' ';
     const int len = 20;
     const int speed = 50;
@@ -152,7 +153,9 @@ void Pokemon::displayHP(int d) { //양수일 경우 회복, 음수일 경우 대
     curBarCount = ((float)HP / fullHP * 100) / tick;
     if (curBarCount == 0 && HP > 0) { curBarCount = 1; }
 
-    cout << name << "\t[";
+    //6세대 일레도리자드 이전의 포켓몬 이름은 다섯자 제한 
+    cout.setf(ios::left);
+    cout << setw(10) << name <<  setw(3) << "  [";
     //베이스 출력 
     if (curBarCount > len * 0.9) {
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //Green
@@ -197,7 +200,8 @@ void Pokemon::displayHP(int d) { //양수일 경우 회복, 음수일 경우 대
         }
         else { /*동일*/ }
 
-        cout << name << "\t[";
+        cout.setf(ios::left);
+        cout << setw(10) << name << setw(3) << "  [";
         
         if (curBarCount > len * 0.9) { 
             SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //Green

@@ -122,16 +122,31 @@ bool isFainted(Pokemon* p1, Pokemon* p2, Trainer& t, Trainer& c, Pokemon** pp1, 
     Sleep(1000);
     bool flagP1 = false, flagP2 = false;
     if (t.getAlivePkmCount() > 0 && c.getAlivePkmCount() > 0) {
-        if (p1->isActive() == false) {
+        if (p1->isActive() == false) { //플레이어
             mciSendString(L"play \"In-Battle_Faint_No_Health.mp3\"", NULL, 0, NULL);
             Sleep(1000);
             *pp1 = changePkm(t, p1);
             flagP1 = true;
         }
-        if (p2->isActive() == false) {
+        if (p2->isActive() == false) { //챔피언 
             mciSendString(L"play \"In-Battle_Faint_No_Health.mp3\"", NULL, 0, NULL);
             Sleep(1000);
-            *pp2 = changePkm_cham(c, p2, checkAlivePokeNum(c));
+            int cham_changePokeNum = checkAlivePokeNum(c);
+
+            cout << c.getName() << "은(는) " << c.getPkm(cham_changePokeNum)->getName() << "을(를) 내보내려고 한다!" << endl;
+            Sleep(1000);
+            int changeFlag = 0;
+            cout << "나도 교체할까?" << endl << "[1] 교체하지 않는다  [2] 교체한다" << endl << "  >>> ";
+            cin >> changeFlag;
+            if (changeFlag == 1) {
+                cout << endl << p1->getName() << ", 힘내!" << endl;
+            }
+            else if (changeFlag == 2) {
+                *pp1 = changePkm(t, p1);
+            }
+            else { cout << endl << "바꾸지 말도록 하자." << endl << p1->getName() << ", 힘내!" << endl; }
+
+            *pp2 = changePkm_cham(c, p2, cham_changePokeNum);
             flagP2 = true;
         }
         if (flagP1 == true || flagP2 == true) {
@@ -212,8 +227,8 @@ void battle(Trainer &t, Trainer &c) {
         char todo = '9';
         Sleep(1000);
         cout << endl << "----------------------------------------------------------" << endl << endl;
-        cout << "\t"; cp->displayHP(0); cout << endl; 
-        cout << "->\t"; p->displayHP(0); cout << " " << p->getHp() << " / " << p->getFHp();
+        cout << "    "; cp->displayHP(0); cout << endl; 
+        cout << "->  "; p->displayHP(0); cout << " " << p->getHp() << " / " << p->getFHp();
 
         cout << endl << endl << p->getName() << "은(는) 무엇을 할까?" << endl <<
             "[0] " << "도망간다" <<
